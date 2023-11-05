@@ -89,3 +89,63 @@ CREATE TABLE obra_assunto (
         ON UPDATE CASCADE
         ON DELETE CASCADE
 );
+
+
+CREATE ROLE dba_db;
+GRANT ALL ON SCHEMA public TO dba_db;
+CREATE USER admin_user WITH PASSWORD 'admin';
+GRANT dba_db TO admin_user;
+
+CREATE ROLE insert_db;
+GRANT INSERT ON ALL TABLES IN SCHEMA public TO insert_db;
+CREATE USER app_user WITH PASSWORD 'app';
+GRANT insert_db TO app_user;
+
+CREATE ROLE select_db;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO select_db;
+CREATE USER relatorio_user WITH PASSWORD 'relatorio';
+GRANT select_db TO relatorio_user;
+
+
+CREATE INDEX "idx_nome_obra" ON obra USING btree (nome);
+CREATE INDEX "idx_tipo_obra" ON obra USING btree (tipo);
+CREATE INDEX "idx_nome_autor" ON autor USING btree (nome);
+CREATE INDEX "idx_ano_criacao_obra" ON criacao_obra USING btree (ano_criacao);
+
+
+CREATE OR REPLACE VIEW public.busca_obra AS 
+	SELECT 
+		o.num_objeto,
+		o.nome,
+		o.tipo,
+		o.tecnica,
+		o.descricao,
+		o.url_obra,
+		ARRAY(
+			SELECT a.nome_assunto 
+			FROM assunto a 
+			INNER JOIN obra_assunto oa ON a.id_assunto = oa.id_assunto
+			WHERE oa.num_objeto = o.num_objeto
+		) AS assuntos,
+		ARRAY(
+			SELECT m.nome_material 
+			FROM material m 
+			INNER JOIN obra_material om ON m.id_material = om.id_material
+			WHERE om.num_objeto = o.num_objeto
+		) AS materiais,
+		a.nome as autor,
+		co.ano_criacao
+	FROM obra o 
+	FULL JOIN criacao_obra co on co.num_objeto = o.num_objeto
+	FULL JOIN autor a on a.id_autor = co.id_autor
+	ORDER BY random() LIMIT 1;
+
+
+
+
+
+
+
+
+
+
